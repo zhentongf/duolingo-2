@@ -8,9 +8,19 @@ try {
 			"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
 	};
 
-	const { sub } = JSON.parse(
-		Buffer.from(process.env.DUOLINGO_JWT.split(".")[1], "base64").toString(),
-	);
+	function parseJwt(token) {
+	  const base64Url = token.split('.')[1];
+	  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+	  const jsonPayload = decodeURIComponent(
+	    atob(base64)
+	      .split('')
+	      .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+	      .join('')
+	  );
+	  return JSON.parse(jsonPayload);
+	}
+
+	const { sub } = parseJwt(process.env.DUOLINGO_JWT);
 
 	const { fromLanguage, learningLanguage } = await fetch(
 		`https://www.duolingo.com/2017-06-30/users/${sub}?fields=fromLanguage,learningLanguage`,
