@@ -38,12 +38,6 @@ jobs:
           curl -X POST -H "Content-Type: application/json" \
             -d "{\"content\": \"🟢 Duolingo manual run succeeded! Output:\n${{ steps.duolingo.outputs.result }}\"}" \
             ${{ secrets.DISCORD_WEBHOOK }}
-      - name: Notify Slack
-        if: ${{ success() && secrets.SLACK_WEBHOOK != '' }}
-        run: >
-          curl -X POST -H 'Content-type: application/json' --data \
-            "{\"text\": \"🟢 Duolingo manual run succeeded.\n${{ steps.duolingo.outputs.result }}\"}" \
-            ${{ secrets.SLACK_WEBHOOK }}
       - name: Notify Email (on failure)
         if: ${{ failure() && secrets.NOTIFY_EMAIL != '' }}
         uses: dawidd6/action-send-mail@v3
