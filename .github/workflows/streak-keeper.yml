@@ -46,17 +46,19 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data \
             "{\"text\": \"🟢 Duolingo streak succeeded.\n${{ steps.duolingo.outputs.result }}\"}" \
             ${{ secrets.SLACK_WEBHOOK }}
-      - name: Notify Email (on failure)
+      - name: Send failure email via Resend
         if: failure()
-        uses: dawidd6/action-send-mail@v3
-        with:
-          to: ${{ secrets.NOTIFY_EMAIL }}
-          subject: ❌ Duolingo streak failed
-          body: >-
-            The daily Duolingo task failed.
+        run: |
+          curl -X POST "https://api.resend.com/emails" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.RESEND_API_KEY }}" \
+            -d '{
+              "from": "Duolingo Bot <onboarding@resend.dev>",
+              "to": ["${{ secrets.NOTIFY_EMAIL }}"],
+              "subject": "❌ Duolingo streak failed",
+              "html": "<p>The daily Duolingo task failed.</p><p>Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}</p>"
+            }'
 
-            Check logs here: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          from: GitHub Actions <actions@example.com>
   delete-old-runs:
     needs: study
     runs-on: ubuntu-latest
