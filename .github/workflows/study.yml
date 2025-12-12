@@ -32,14 +32,14 @@ jobs:
         env:
           DUOLINGO_JWT: ${{ secrets.DUOLINGO_JWT }}
           LESSONS: ${{ inputs.lessons }}
-      - name: Notify Discord
-        if: ${{ success() && secrets.DISCORD_WEBHOOK != '' }}
+      - name: Notify Discord on success
+        if: success()
         run: >
           curl -X POST -H "Content-Type: application/json" \
             -d "{\"content\": \"🟢 Duolingo manual run succeeded! Output:\n${{ steps.duolingo.outputs.result }}\"}" \
             ${{ secrets.DISCORD_WEBHOOK }}
-      - name: Notify Email (on failure)
-        if: ${{ failure() && secrets.NOTIFY_EMAIL != '' }}
+      - name: Notify Email on failure
+        if: failure()
         uses: dawidd6/action-send-mail@v3
         with:
           to: ${{ secrets.NOTIFY_EMAIL }}
