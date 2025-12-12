@@ -1,21 +1,57 @@
 name: Do a Duolingo lesson
-
 on:
   workflow_dispatch:
     inputs:
       lessons:
         default: 1
-        description: 'Number of lessons to be completed'
-        required: false
+        description: Number of lessons to complete
         type: number
-
+        required: false
 jobs:
   study:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun index.js
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Validate DUOLINGO_JWT secret
+        run: |
+          if [ -z "${{ secrets.DUOLINGO_JWT }}" ]; then
+            echo "❌ ERROR: DUOLINGO_JWT is missing"
+            exit 1
+          fi
+        shell: bash
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+      - name: Run lessons
+        id: duolingo
+        run: |
+          echo "Running ${{ inputs.lessons }} Duolingo lessons..."
+          OUTPUT=$(bun index.js 2>&1)
+          echo "$OUTPUT"
+          echo "result=$OUTPUT" >> $GITHUB_OUTPUT
         env:
           DUOLINGO_JWT: ${{ secrets.DUOLINGO_JWT }}
           LESSONS: ${{ inputs.lessons }}
+      - name: Notify Discord
+        if: ${{ success() && secrets.DISCORD_WEBHOOK != '' }}
+        run: >
+          curl -X POST -H "Content-Type: application/json" \
+            -d "{\"content\": \"🟢 Duolingo manual run succeeded! Output:\n${{ steps.duolingo.outputs.result }}\"}" \
+            ${{ secrets.DISCORD_WEBHOOK }}
+      - name: Notify Slack
+        if: ${{ success() && secrets.SLACK_WEBHOOK != '' }}
+        run: >
+          curl -X POST -H 'Content-type: application/json' --data \
+            "{\"text\": \"🟢 Duolingo manual run succeeded.\n${{ steps.duolingo.outputs.result }}\"}" \
+            ${{ secrets.SLACK_WEBHOOK }}
+      - name: Notify Email (on failure)
+        if: ${{ failure() && secrets.NOTIFY_EMAIL != '' }}
+        uses: dawidd6/action-send-mail@v3
+        with:
+          to: ${{ secrets.NOTIFY_EMAIL }}
+          subject: ❌ Duolingo lesson run failed
+          body: >-
+            The manual Duolingo task failed.
+
+            Check logs here: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          from: GitHub Actions <actions@example.com>
