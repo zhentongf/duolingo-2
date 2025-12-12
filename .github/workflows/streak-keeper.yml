@@ -2,6 +2,13 @@ name: Keep my Duolingo streak
 on:
   schedule:
     - cron: 0 17 * * *
+  workflow_dispatch:
+  inputs:
+    lessons:
+      default: 1
+      description: Number of lessons to complete
+      type: number
+      required: false
 jobs:
   study:
     runs-on: ubuntu-latest
