@@ -1,29 +1,65 @@
 name: Keep my Duolingo streak
-
 on:
   schedule:
-    - cron: '0 9 * * *'
-
+    - cron: 0 9 * * *
 jobs:
   study:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun index.js
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Validate DUOLINGO_JWT secret
+        run: |
+          if [ -z "${{ secrets.DUOLINGO_JWT }}" ]; then
+            echo "❌ ERROR: DUOLINGO_JWT is missing"
+            exit 1
+          fi
+        shell: bash
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+      - name: Run Duolingo automation
+        id: duolingo
+        run: |
+          echo "Running daily streak task..."
+          OUTPUT=$(bun index.js 2>&1)
+          echo "$OUTPUT"
+          echo "result=$OUTPUT" >> $GITHUB_OUTPUT
         env:
           DUOLINGO_JWT: ${{ secrets.DUOLINGO_JWT }}
           LESSONS: 1
+      - name: Notify Discord
+        if: success()
+        run: >
+          curl -X POST -H "Content-Type: application/json" \
+            -d "{\"content\": \"🟢 Duolingo streak run succeeded! Output:\n${{ steps.duolingo.outputs.result }}\"}" \
+            ${{ secrets.DISCORD_WEBHOOK }}
+      - name: Notify Slack
+        if: success()
+        run: >
+          curl -X POST -H 'Content-type: application/json' --data \
+            "{\"text\": \"🟢 Duolingo streak succeeded.\n${{ steps.duolingo.outputs.result }}\"}" \
+            ${{ secrets.SLACK_WEBHOOK }}
+      - name: Notify Email (on failure)
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          to: ${{ secrets.NOTIFY_EMAIL }}
+          subject: ❌ Duolingo streak failed
+          body: >-
+            The daily Duolingo task failed.
+
+            Check logs here: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          from: GitHub Actions <actions@example.com>
   delete-old-runs:
+    needs: study
     runs-on: ubuntu-latest
     permissions:
-        actions: write
-        contents: read
+      actions: write
+      contents: read
     steps:
-      - name: Delete workflow runs
+      - name: Delete old workflow runs
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ github.token }}
-          repository: ${{ github.repository }}
           keep_minimum_runs: 0
           retain_days: 0
