@@ -53,7 +53,7 @@ jobs:
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.RESEND_API_KEY }}" \
             -d '{
-              "from": "Duolingo Bot <onboarding@resend.dev>",
+              "from": "Duolingo Bot <f02-mail@ronf.top>",
               "to": ["${{ secrets.NOTIFY_EMAIL }}"],
               "subject": "❌ Duolingo streak failed",
               "html": "<p>The daily Duolingo task failed.</p><p>Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}</p>"
