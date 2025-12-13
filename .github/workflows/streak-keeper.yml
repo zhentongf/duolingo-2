@@ -2,13 +2,13 @@ name: Keep my Duolingo streak
 on:
   schedule:
     - cron: 0 17 * * *
-  workflow_dispatch:
-    inputs:
-      lessons:
-        default: 1
-        description: Number of lessons to complete
-        type: number
-        required: false
+  # workflow_dispatch:
+  #   inputs:
+  #     lessons:
+  #       default: 1
+  #       description: Number of lessons to complete
+  #       type: number
+  #       required: false
 jobs:
   study:
     runs-on: ubuntu-latest
@@ -40,12 +40,6 @@ jobs:
           curl -X POST -H "Content-Type: application/json" \
             -d "{\"content\": \"🟢 Duolingo streak run succeeded! Output:\n${{ steps.duolingo.outputs.result }}\"}" \
             ${{ secrets.DISCORD_WEBHOOK }}
-      - name: Notify Slack
-        if: success()
-        run: >
-          curl -X POST -H 'Content-type: application/json' --data \
-            "{\"text\": \"🟢 Duolingo streak succeeded.\n${{ steps.duolingo.outputs.result }}\"}" \
-            ${{ secrets.SLACK_WEBHOOK }}
       - name: Send failure email via Resend
         if: failure()
         run: |
