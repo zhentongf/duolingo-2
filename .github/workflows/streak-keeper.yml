@@ -2,43 +2,64 @@ name: Keep my Duolingo streak
 on:
   schedule:
     - cron: 0 17 * * *
-  # workflow_dispatch:
-  #   inputs:
-  #     lessons:
-  #       default: 1
-  #       description: Number of lessons to complete
-  #       type: number
-  #       required: false
 jobs:
   study:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Validate DUOLINGO_JWT secret
+      - name: Validate DUOLINGO_JWT secrets
         run: |
           if [ -z "${{ secrets.DUOLINGO_JWT }}" ]; then
-            echo "❌ ERROR: DUOLINGO_JWT is missing"
+            echo "❌ DUOLINGO_JWT is missing"
+            exit 1
+          fi
+          if [ -z "${{ secrets.DUOLINGO_JWT_2 }}" ]; then
+            echo "❌ DUOLINGO_JWT_2 is missing"
+            exit 1
+          fi
+          if [ -z "${{ secrets.DUOLINGO_JWT_3 }}" ]; then
+            echo "❌ DUOLINGO_JWT_3 is missing"
             exit 1
           fi
         shell: bash
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
-      - name: Run Duolingo automation
-        id: duolingo
-        run: |
-          echo "Running daily streak task..."
-          OUTPUT=$(bun index.js 2>&1)
-          echo "$OUTPUT"
-          echo "result=$OUTPUT" >> $GITHUB_OUTPUT
+      - name: Run Duolingo automation (account 1)
+        id: duolingo_1
         env:
           DUOLINGO_JWT: ${{ secrets.DUOLINGO_JWT }}
           LESSONS: 1
-      - name: Notify Discord
+        run: |
+          OUTPUT=$(bun index.js 2>&1)
+          echo "$OUTPUT"
+          echo "result=$OUTPUT" >> $GITHUB_OUTPUT
+      - name: Run Duolingo automation (account 2)
+        id: duolingo_2
+        env:
+          DUOLINGO_JWT: ${{ secrets.DUOLINGO_JWT_2 }}
+          LESSONS: 1
+        run: |
+          OUTPUT=$(bun index.js 2>&1)
+          echo "$OUTPUT"
+          echo "result=$OUTPUT" >> $GITHUB_OUTPUT
+
+      - name: Run Duolingo automation (account 3)
+        id: duolingo_3
+        env:
+          DUOLINGO_JWT: ${{ secrets.DUOLINGO_JWT_3 }}
+          LESSONS: 1
+        run: |
+          OUTPUT=$(bun index.js 2>&1)
+          echo "$OUTPUT"
+          echo "result=$OUTPUT" >> $GITHUB_OUTPUT
+      - name: Notify Discord on success
         if: success()
         run: >
           curl -X POST -H "Content-Type: application/json" \
-            -d "{\"content\": \"🟢 Duolingo streak run succeeded! Output:\n${{ steps.duolingo.outputs.result }}\"}" \
+            -d "{
+              \"content\": \"🟢 Duolingo streak succeeded!\n\nAccount 1:\n${{ steps.duolingo_1.outputs.result }}\n\nAccount 2:\n${{ steps.duolingo_2.outputs.result }}\n\nAccount 3:\n${{ steps.duolingo_3.outputs.result }}\"
+            }" \
             ${{ secrets.DISCORD_WEBHOOK }}
       - name: Send failure email via Resend
         if: failure()
