@@ -1,6 +1,6 @@
 # duolingo
 
-[![Keep my Duolingo streak](https://github.com/dngnd-forks/duolingo-2/actions/workflows/streak-keeper.yml/badge.svg?branch=main)](https://github.com/dngnd-forks/duolingo-2/actions/workflows/streak-keeper.yml)
+[![Keep my Duolingo streak](https://github.com/zhentongf/duolingo-2/actions/workflows/streak-keeper.yml/badge.svg)](https://github.com/zhentongf/duolingo-2/actions/workflows/streak-keeper.yml)
 
 <img src="duo.svg" width="128px"/>
 
@@ -18,7 +18,7 @@ document.cookie
   .split(';')
   .find(cookie => cookie.includes('jwt_token'))
   .split('=')[1]
- ```
+```
   
   5. Go to your forked repository
   6. Go to Settings > Secrets and Variables > Actions . And click the button `New Repository secret`
