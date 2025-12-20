@@ -8,21 +8,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Validate DUOLINGO_JWT secrets
-        run: |
-          if [ -z "${{ secrets.DUOLINGO_JWT }}" ]; then
-            echo "❌ DUOLINGO_JWT is missing"
-            exit 1
-          fi
-          if [ -z "${{ secrets.DUOLINGO_JWT_2 }}" ]; then
-            echo "❌ DUOLINGO_JWT_2 is missing"
-            exit 1
-          fi
-          if [ -z "${{ secrets.DUOLINGO_JWT_3 }}" ]; then
-            echo "❌ DUOLINGO_JWT_3 is missing"
-            exit 1
-          fi
-        shell: bash
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
       - name: Run Duolingo automation (account 1)
@@ -73,6 +58,11 @@ jobs:
               "subject": "❌ Duolingo streak failed",
               "html": "<p>The daily Duolingo task failed.</p><p>Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}</p>"
             }'
+          curl -X POST -H "Content-Type: application/json" \
+            -d "{
+              \"content\": \"❌ Duolingo streak failed. Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
+            }" \
+            ${{ secrets.DISCORD_WEBHOOK }}
 
   delete-old-runs:
     needs: study
