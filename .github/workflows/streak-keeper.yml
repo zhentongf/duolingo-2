@@ -40,12 +40,15 @@ jobs:
           echo "result=$OUTPUT" >> $GITHUB_OUTPUT
       - name: Notify Discord on success
         if: success()
-        run: >
+        run: |
           curl -X POST -H "Content-Type: application/json" \
             -d "{
               \"content\": \"🟢 Duolingo streak succeeded!\n\nAccount 1:\n${{ steps.duolingo_1.outputs.result }}\n\nAccount 2:\n${{ steps.duolingo_2.outputs.result }}\n\nAccount 3:\n${{ steps.duolingo_3.outputs.result }}\"
             }" \
             ${{ secrets.DISCORD_WEBHOOK }}
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="Duolingo workflow: ${{ job.status }}"
       - name: Send failure email via Resend
         if: failure()
         run: |
@@ -63,6 +66,9 @@ jobs:
               \"content\": \"❌ Duolingo streak failed. Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
             }" \
             ${{ secrets.DISCORD_WEBHOOK }}
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="Duolingo workflow: ${{ job.status }}"
 
   delete-old-runs:
     needs: study
